@@ -1,0 +1,297 @@
+REPORT zone098_final2.
+
+DATA : gt_yemek   TYPE TABLE OF zone000_yemek,
+       gs_yemek   TYPE zone000_yemek,
+       gt_menu    TYPE TABLE OF zone098_menu,
+       gs_menu    TYPE zone098_menu,
+       ran_yemek  TYPE int4,
+       ran2_yemek TYPE int4,
+       ran3_yemek TYPE int4,
+       ran4_yemek TYPE int4,
+       gv_menu_id TYPE  int1,
+       gv_yemek2  TYPE zone000_yemek,
+       gv_yemek3  TYPE zone000_yemek,
+       gv_yemek4  TYPE zone000_yemek.
+
+TABLES : zone098_menu .
+
+*TYPES : mandt     TYPE mandt,
+*        grup      TYPE zone000_yemek-grup,
+*        yemek_id  TYPE zone000_yemek-yemek_id,
+*        yemek_tnm TYPE zone000_yemek-yemek_tnm,
+*        land1     TYPE zone000_yemek-land1,
+*        gv_menu_id   TYPE  int1.
+
+START-OF-SELECTION.
+
+
+  SELECT  * FROM zone000_yemek
+        INTO TABLE @gt_yemek.
+
+
+
+  DO 4 TIMES.
+    CASE sy-index .
+
+      WHEN 1 .
+        gv_menu_id = 100.
+      WHEN 2 .
+        gv_menu_id = 101.
+      WHEN 3 .
+        gv_menu_id = 102 .
+
+      WHEN 4.
+        gv_menu_id = 103.
+    ENDCASE.
+
+**A GROUP SELECTİON
+
+
+    CALL FUNCTION 'QF05_RANDOM_INTEGER'
+      EXPORTING
+        ran_int_max = 4
+        ran_int_min = 1
+      IMPORTING
+        ran_int     = ran_yemek.
+
+    READ TABLE gt_yemek INTO DATA(ls1_yemek) WITH KEY yemek_id = ran_yemek
+                                                      grup = 'A'.
+
+
+    IF sy-subrc = 0.
+      MOVE-CORRESPONDING ls1_yemek TO gs_menu .
+      gs_menu-menu_id = gv_menu_id .
+      APPEND gs_menu TO gt_menu .
+      CLEAR gs_menu .
+
+    ELSE.
+      WRITE 'hata!!'.
+
+    ENDIF.
+
+**B GROUP SELECTİON
+
+    CALL FUNCTION 'QF05_RANDOM_INTEGER'
+      EXPORTING
+        ran_int_max = 4
+        ran_int_min = 1
+      IMPORTING
+        ran_int     = ran_yemek.
+
+    READ TABLE gt_yemek INTO DATA(ls2_yemek) WITH KEY yemek_id = ran_yemek
+                                                      grup = 'B'.
+    IF sy-subrc = 0.
+*      We're checking matching land here in While loop,if land is matched we create new random number in order to find new food from another Land.
+      IF ls2_yemek-land1 EQ ls1_yemek-land1 .
+        WHILE ls2_yemek-land1 EQ ls1_yemek-land1.
+
+          CALL FUNCTION 'QF05_RANDOM_INTEGER'
+            EXPORTING
+              ran_int_max = 4
+              ran_int_min = 1
+            IMPORTING
+              ran_int     = ran2_yemek.
+
+          READ TABLE gt_yemek INTO gv_yemek2 WITH KEY yemek_id = ran2_yemek
+                                                          grup = 'B'.
+
+*        We're checking new random number here to prevent to catch previous number
+
+          IF ran2_yemek EQ ran_yemek.
+
+            WHILE ran2_yemek EQ ran_yemek.
+              CALL FUNCTION 'QF05_RANDOM_INTEGER'
+                EXPORTING
+                  ran_int_max = 4
+                  ran_int_min = 1
+                IMPORTING
+                  ran_int     = ran2_yemek.
+
+
+              READ TABLE gt_yemek INTO gv_yemek2 WITH KEY yemek_id = ran2_yemek
+                                                          grup = 'B'.
+            ENDWHILE.
+
+          ENDIF.
+
+          MOVE-CORRESPONDING gv_yemek2 TO gs_menu .
+          gs_menu-menu_id = gv_menu_id .
+          APPEND gs_menu TO gt_menu .
+          ls2_yemek = gv_yemek2.
+
+        ENDWHILE.
+
+      ENDIF.
+
+      IF ls2_yemek ne gv_yemek2.
+        MOVE-CORRESPONDING ls2_yemek TO gs_menu .
+        gs_menu-menu_id = gv_menu_id .
+        APPEND gs_menu TO gt_menu .
+
+
+      ENDIF.
+      CLEAR gs_menu .
+      CLEAR gv_yemek2.
+
+    ELSE.
+      WRITE 'hata!!'.
+
+    ENDIF.
+
+**C GROUP SELECTİON
+
+    CALL FUNCTION 'QF05_RANDOM_INTEGER'
+      EXPORTING
+        ran_int_max = 4
+        ran_int_min = 1
+      IMPORTING
+        ran_int     = ran_yemek.
+
+    READ TABLE gt_yemek INTO DATA(ls3_yemek) WITH KEY yemek_id = ran_yemek
+                                                      grup = 'C'.
+    IF sy-subrc = 0.
+      IF ls3_yemek-land1 EQ ls1_yemek-land1
+        OR ls3_yemek-land1 EQ ls2_yemek-land1.
+
+        WHILE ls3_yemek-land1 EQ ls1_yemek-land1
+           OR ls3_yemek-land1 EQ ls2_yemek-land1.
+
+          CALL FUNCTION 'QF05_RANDOM_INTEGER'
+            EXPORTING
+              ran_int_max = 4
+              ran_int_min = 1
+            IMPORTING
+              ran_int     = ran3_yemek.
+
+
+          READ TABLE gt_yemek INTO gv_yemek3 WITH KEY yemek_id = ran3_yemek
+                                                          grup = 'C'. .
+          IF ran3_yemek EQ ran_yemek.
+            WHILE ran3_yemek EQ ran_yemek.
+              CALL FUNCTION 'QF05_RANDOM_INTEGER'
+                EXPORTING
+                  ran_int_max = 4
+                  ran_int_min = 1
+                IMPORTING
+                  ran_int     = ran3_yemek.
+
+              READ TABLE gt_yemek INTO gv_yemek3 WITH KEY yemek_id = ran3_yemek
+                                                          grup = 'C'.
+           ENDWHILE.
+
+          ENDIF.
+
+          MOVE-CORRESPONDING gv_yemek3 TO gs_menu .
+          gs_menu-menu_id = gv_menu_id .
+          APPEND gs_menu TO gt_menu .
+          ls3_yemek = gv_yemek3.
+
+        ENDWHILE.
+
+      ENDIF.
+      IF ls3_yemek ne gv_yemek3 .
+        MOVE-CORRESPONDING ls3_yemek TO gs_menu .
+        gs_menu-menu_id = gv_menu_id .
+        APPEND gs_menu TO gt_menu .
+
+
+      ENDIF.
+      CLEAR gs_menu .
+      CLEAR gv_yemek3.
+
+    ELSE.
+      WRITE 'hata!!'.
+
+    ENDIF.
+
+
+**D GROUP SELECTİON
+
+    CALL FUNCTION 'QF05_RANDOM_INTEGER'
+      EXPORTING
+        ran_int_max = 4
+        ran_int_min = 1
+      IMPORTING
+        ran_int     = ran_yemek.
+    READ TABLE gt_yemek INTO DATA(ls4_yemek) WITH KEY yemek_id = ran_yemek
+                                                      grup = 'D'.
+
+    IF sy-subrc = 0.
+      IF ls4_yemek-land1 EQ ls1_yemek-land1
+        OR ls4_yemek-land1 EQ ls2_yemek-land1
+        OR ls4_yemek-land1 EQ ls3_yemek-land1.
+
+        WHILE ls4_yemek-land1 EQ ls1_yemek-land1
+           OR ls4_yemek-land1 EQ ls2_yemek-land1
+           OR ls4_yemek-land1 EQ ls3_yemek-land1.
+
+          CALL FUNCTION 'QF05_RANDOM_INTEGER'
+            EXPORTING
+              ran_int_max = 4
+              ran_int_min = 1
+            IMPORTING
+              ran_int     = ran4_yemek.
+
+          READ TABLE gt_yemek INTO gv_yemek4 WITH KEY yemek_id = ran4_yemek
+                                                    grup = 'D'.
+          IF ran4_yemek EQ ran_yemek.
+            WHILE ran4_yemek EQ ran_yemek.
+              CALL FUNCTION 'QF05_RANDOM_INTEGER'
+                EXPORTING
+                  ran_int_max = 4
+                  ran_int_min = 1
+                IMPORTING
+                  ran_int     = ran4_yemek.
+              READ TABLE gt_yemek INTO gv_yemek4 WITH KEY yemek_id = ran4_yemek
+                                                    grup = 'D'.
+
+            ENDWHILE.
+
+
+          ENDIF.
+          MOVE-CORRESPONDING gv_yemek4 TO gs_menu .
+          gs_menu-menu_id = gv_menu_id .
+          APPEND gs_menu TO gt_menu .
+          ls4_yemek = gv_yemek4.
+
+        ENDWHILE.
+
+
+      ENDIF.
+      IF ls4_yemek ne gv_yemek4.
+        MOVE-CORRESPONDING ls4_yemek TO gs_menu .
+        gs_menu-menu_id = gv_menu_id .
+        APPEND gs_menu TO gt_menu .
+
+       ENDIF.
+
+    ELSE.
+      WRITE 'hata!!'.
+
+    ENDIF.
+    CLEAR gv_yemek4.
+
+
+*       APPEnd #( menu_id = menu_id
+
+
+
+*      APPEND ls1_yemek TO gt_menu.
+*      APPEND ls2_yemek TO gt_menu.
+*      APPEND ls3_yemek TO gt_menu.
+*      APPEND ls4_yemek TO gt_menu
+
+  ENDDO.
+  DELETE  FROM zone098_menu WHERE menu_id = 100.
+  DELETE  FROM zone098_menu WHERE menu_id = 101.
+  DELETE  FROM zone098_menu WHERE menu_id = 102.
+  DELETE  FROM zone098_menu WHERE menu_id = 103.
+
+                  .
+  MODIFY zone098_menu FROM TABLE gt_menu.
+  COMMIT WORK AND WAIT.
+
+
+
+
+  .
